@@ -73,6 +73,8 @@ export const traceSchema = z.object({
   capabilities: z
     .object({
       transcript: z.boolean().default(true),
+      /** Whether the transcript carries per-message tool counters, not just text. */
+      toolCounters: z.boolean().default(true),
       records: z.boolean().default(false),
     })
     .optional(),

@@ -106,17 +106,27 @@ Skill/agent, execute the workflow, assert, then file the verdict with `create_te
 The same engine and checks are used in both modes.
 
 **Mode A — standalone CLI in CI.** `awc --adapter alan` drives `execute_workflow`, polls
-`workflow_execution`, reads the run's artifacts and transcript. It needs a transport that can
-authenticate outside Alan; that is still an open question (**P0 gate**). Until it returns, the
-adapter boundary is wired but unplugged:
+`workflow_execution`, reads the run's artifacts and transcript. The mapping onto Alan's own tools
+is implemented; the only unbuilt piece is a client that can reach and authenticate to that surface
+from a non-Alan process (**P0 gate**):
 
 ```bash
 AWC_TRANSPORT_MODULE=./my-transport.js awc run -c contracts --adapter alan
 ```
 
-The module default-exports an `AlanTransport` (see `src/adapters/alan-mcp.ts`). Nothing else in
-the kit changes when the transport lands. The transport also resolves an execution to its session;
-if it cannot, transcript-based checks report `skipped` rather than seeing zero tool calls.
+```ts
+// my-transport.ts — the missing piece is only client.call(...).
+import { createAlanMcpTransport } from "alan-workflow-contract-kit";
+
+export default createAlanMcpTransport({
+  teamId: process.env.ALAN_TEAM_ID,
+  client: { call: (tool, input) => myAuthenticatedMcpClient[tool](input) },
+});
+```
+
+`createAlanMcpTransport` already sends contract inputs as `triggerPayload`, unwraps `rows`
+envelopes, maps `errorKind`, reads `list_artifacts` + `get_artifact`, and resolves a run to its
+session before calling `get_session_context`. Nothing else in the kit changes when the client lands.
 
 ## Baseline and flake
 
@@ -160,16 +170,38 @@ Everything the CLI does is importable, which is how Mode B drives it from inside
 ## What v0 does not do
 
 - No LLM judge. Presence, structure and evidence are deterministic; taste is out of scope.
-- No argument-level tool assertions. `get_session_context` exposes per-message tool **counters**,
-  so `trace.tool_used` asserts "which tool, how many times". Checks needing arguments do not
-  exist yet rather than being guessed at.
+- No argument-level tool assertions. `trace.tool_used` asserts "which tool, how many times";
+  checks needing arguments do not exist yet rather than being guessed at.
 - No generic eval framework, no promptfoo competitor. This owns Alan records, evidence pointers
   and the baseline format.
+
+## Verified against the live surface
+
+The transport mapping was written against the tool signatures, not against a plan:
+
+| transport call | Alan tool | notes |
+| --- | --- | --- |
+| `executeWorkflow` | `execute_workflow` | `inputs` become `triggerPayload` |
+| `getExecution` | `workflow_execution({ op: "get" })` | `status`, `output`, `error`, `errorKind`, `completedAt` |
+| `listArtifacts` | `list_artifacts({ workflowExecutionId })` | returns rows in an envelope |
+| `getArtifact` | `get_artifact` | full body; the outline is parsed locally to the same shape |
+| `getSessionMessages` | `list_sessions` → `get_session_context` | resolution is by `taskId`/`sessionId` |
+
+Two facts that changed the design:
+
+1. `get_session_context` returned only `id`, `role`, `content`, `turnOrdinal`, `createdAt` on a
+   live session that had used many tools — **no counter fields**. Counter checks therefore report
+   `skipped` under the MCP transport until Alan exposes counts, instead of failing every run.
+2. `list_sessions` has no execution filter, so a run is resolved to its session by `taskId` or an
+   explicit `sessionId`. When neither exists, transcript checks skip.
+
+Both are recorded as capability flags on the run (`transcript`, `toolCounters`, `records`) rather
+than buried in adapter code.
 
 ## Development
 
 ```bash
-npm test          # 60 tests, offline
+npm test          # 66 tests, offline
 npm run typecheck
 npm run build
 ```

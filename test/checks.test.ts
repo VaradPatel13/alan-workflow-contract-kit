@@ -201,7 +201,7 @@ describe("run.status", () => {
 });
 
 describe("unavailable evidence", () => {
-  const noTranscript = makeTrace({ capabilities: { transcript: false, records: false } });
+  const noTranscript = makeTrace({ capabilities: { transcript: false, toolCounters: false, records: false } });
 
   it("skips counter checks when the transport cannot read the session", () => {
     expect(run({ id: "used", type: "trace.tool_used", tool: "read_file", min_calls: 1 }, noTranscript).status).toBe(
@@ -212,7 +212,7 @@ describe("unavailable evidence", () => {
 
   it("still evaluates explicit limits when the adapter supplies them", () => {
     const trace = makeTrace({
-      capabilities: { transcript: false, records: false },
+      capabilities: { transcript: false, toolCounters: false, records: false },
       limits: { toolCalls: 61, failedToolCalls: 0 },
     });
     expect(run({ id: "budget", type: "run.limits", max_tool_calls: 60 }, trace).status).toBe("fail");

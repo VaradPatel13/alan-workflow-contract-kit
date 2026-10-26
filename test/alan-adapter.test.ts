@@ -85,7 +85,7 @@ describe("AlanAdapter", () => {
     const adapter = new AlanAdapter({ transport: withoutTranscript });
 
     const trace = await adapter.run({ contract, runIndex: 0 });
-    expect(trace.capabilities).toEqual({ transcript: false, records: false });
+    expect(trace.capabilities).toEqual({ transcript: false, toolCounters: false, records: false });
     expect(trace.messages).toEqual([]);
   });
 

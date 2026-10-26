@@ -16,7 +16,20 @@ export {
 
 export { FixtureAdapter } from "./adapters/fixture";
 export { AlanAdapter, createUnavailableTransport } from "./adapters/alan-mcp";
-export type { AlanTransport, AlanAdapterOptions } from "./adapters/alan-mcp";
+export type {
+  AlanTransport,
+  AlanAdapterOptions,
+  ExecutionSnapshot,
+  ArtifactSnapshot,
+  SessionMessageSnapshot,
+} from "./adapters/alan-mcp";
+export { createAlanMcpTransport } from "./adapters/alan-mcp-transport";
+export type {
+  AlanMcpClient,
+  AlanMcpTransportOptions,
+  AlanTool,
+  McpTransport,
+} from "./adapters/alan-mcp-transport";
 export { IntegrationError } from "./adapters/types";
 export type { Adapter, RunRequest } from "./adapters/types";
 

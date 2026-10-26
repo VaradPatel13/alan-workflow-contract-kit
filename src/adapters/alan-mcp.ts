@@ -15,6 +15,9 @@ export interface ExecutionSnapshot {
   startedAt?: string;
   completedAt?: string;
   model?: string;
+  /** Used to resolve the run's session when the platform exposes the link. */
+  taskId?: string;
+  sessionId?: string;
 }
 
 export interface ArtifactSnapshot {
@@ -30,6 +33,8 @@ export interface SessionMessageSnapshot {
   content: string;
   toolCalls?: Record<string, number>;
   failedToolCalls?: Record<string, number>;
+  /** True when the payload actually carried a counter field, even if it was empty. */
+  hasToolCounters?: boolean;
 }
 
 export interface SubtaskSnapshot {
@@ -39,6 +44,15 @@ export interface SubtaskSnapshot {
 }
 
 export interface AlanTransport {
+  /**
+   * Whether the transcript payload carries per-message tool counters.
+   *
+   * Observed `get_session_context` payloads on a live team returned only
+   * `id`, `role`, `content`, `turnOrdinal` and `createdAt`, so a transport
+   * that cannot see counters must declare `false` and let counter checks skip.
+   */
+  readonly toolCounters?: boolean;
+
   /**
    * Maps to `execute_workflow({ workflowId, triggerPayload })`: `inputs` is sent
    * as `triggerPayload`, which also carries task/PR context when relevant.
@@ -132,7 +146,11 @@ export class AlanAdapter implements Adapter {
       ...(snapshot.model ?? contract.model ? { model: snapshot.model ?? contract.model } : {}),
       artifacts,
       messages: transcript.messages,
-      capabilities: { transcript: transcript.available, records: records !== undefined },
+      capabilities: {
+        transcript: transcript.available,
+        toolCounters: this.transport.toolCounters ?? transcript.hasCounters,
+        records: records !== undefined,
+      },
       ...(records ? { records } : {}),
     });
   }
@@ -185,10 +203,11 @@ export class AlanAdapter implements Adapter {
     executionId: string,
   ): Promise<{
     available: boolean;
+    hasCounters: boolean;
     messages: { role: string; content: string; toolCalls: Record<string, number>; failedToolCalls: Record<string, number> }[];
   }> {
     if (!this.transport.getSessionMessages) {
-      return { available: false, messages: [] };
+      return { available: false, hasCounters: false, messages: [] };
     }
 
     const messages = await this.transport
@@ -197,15 +216,22 @@ export class AlanAdapter implements Adapter {
         throw this.wrap(error, `get_session_context ${executionId}`);
       });
 
-    return {
-      available: true,
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-        toolCalls: message.toolCalls ?? {},
-        failedToolCalls: message.failedToolCalls ?? {},
-      })),
-    };
+    const normalized = messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+      toolCalls: message.toolCalls ?? {},
+      failedToolCalls: message.failedToolCalls ?? {},
+    }));
+
+    const hasCounters = messages.some((message) => {
+      if (message.hasToolCounters !== undefined) return message.hasToolCounters;
+      return (
+        Object.keys(message.toolCalls ?? {}).length > 0 ||
+        Object.keys(message.failedToolCalls ?? {}).length > 0
+      );
+    });
+
+    return { available: true, hasCounters, messages: normalized };
   }
 
   private async collectRecords(

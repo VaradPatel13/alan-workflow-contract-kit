@@ -10,6 +10,9 @@ export const toolUsed: CheckRegistry["trace.tool_used"] = (check, ctx) => {
   if (ctx.trace.capabilities?.transcript === false) {
     return result(check, "skipped", "run exposes no transcript (transport cannot resolve the session)");
   }
+  if (ctx.trace.capabilities?.toolCounters === false) {
+    return result(check, "skipped", "transcript carries no per-message tool counters");
+  }
 
   const count = toolCallCount(ctx.trace, check.tool);
 
