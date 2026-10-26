@@ -79,6 +79,30 @@ describe("AlanAdapter", () => {
     expect(trace.records).toBeUndefined();
   });
 
+  it("flags a missing transcript instead of inventing zero tool calls", async () => {
+    const { getSessionMessages, ...withoutTranscript } = transport();
+    void getSessionMessages;
+    const adapter = new AlanAdapter({ transport: withoutTranscript });
+
+    const trace = await adapter.run({ contract, runIndex: 0 });
+    expect(trace.capabilities).toEqual({ transcript: false, records: false });
+    expect(trace.messages).toEqual([]);
+  });
+
+  it("stops polling on every terminal status Alan can return", async () => {
+    for (const status of ["interrupted", "skipped", "cancelled", "timed_out"]) {
+      const adapter = new AlanAdapter({
+        transport: transport({ getExecution: async () => ({ executionId: "exec_1", status }) }),
+        now: () => 0,
+        sleep: async () => {
+          throw new Error("should not sleep");
+        },
+      });
+      const trace = await adapter.run({ contract, runIndex: 0 });
+      expect(trace.status).toBe(status);
+    }
+  });
+
   it("fails loudly when no live transport is wired (Mode A gate)", async () => {
     const adapter = new AlanAdapter({
       transport: createUnavailableTransport("Mode A spike not passed"),

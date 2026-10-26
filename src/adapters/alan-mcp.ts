@@ -39,6 +39,10 @@ export interface SubtaskSnapshot {
 }
 
 export interface AlanTransport {
+  /**
+   * Maps to `execute_workflow({ workflowId, triggerPayload })`: `inputs` is sent
+   * as `triggerPayload`, which also carries task/PR context when relevant.
+   */
   executeWorkflow(input: {
     workflowId: string;
     inputs: Record<string, unknown>;
@@ -46,20 +50,32 @@ export interface AlanTransport {
   getExecution(executionId: string): Promise<ExecutionSnapshot>;
   listArtifacts(executionId: string): Promise<ArtifactSnapshot[]>;
   getArtifact(artifactId: string): Promise<ArtifactSnapshot>;
-  getSessionMessages(executionId: string): Promise<SessionMessageSnapshot[]>;
+  /**
+   * Resolve the execution's session (list_sessions) and read it with
+   * get_session_context. Optional: transports that cannot resolve the session
+   * leave transcript checks skipped instead of failing them.
+   */
+  getSessionMessages?(executionId: string): Promise<SessionMessageSnapshot[]>;
   /** Optional: transports that cannot read records leave records.subtasks skipped. */
   getRecords?(executionId: string): Promise<{ subtasks: SubtaskSnapshot[] }>;
 }
 
+/**
+ * Statuses from `workflow_execution` that end a poll. `pending`, `running` and
+ * `awaiting_local` are not terminal: waiting on a local machine may still move,
+ * and if it never does the timeout turns it into an integration error.
+ */
 const TERMINAL_STATUSES = new Set([
   "succeeded",
   "completed",
   "failed",
-  "timed_out",
-  "sandbox_died",
-  "missing_variables",
+  "interrupted",
   "cancelled",
   "canceled",
+  "timed_out",
+  "skipped",
+  "missing_variables",
+  "sandbox_died",
 ]);
 
 export interface AlanAdapterOptions {
@@ -100,7 +116,7 @@ export class AlanAdapter implements Adapter {
 
     const snapshot = await this.poll(executionId, started);
 
-    const [artifacts, messages, records] = await Promise.all([
+    const [artifacts, transcript, records] = await Promise.all([
       this.collectArtifacts(executionId),
       this.collectMessages(executionId),
       this.collectRecords(executionId),
@@ -115,7 +131,8 @@ export class AlanAdapter implements Adapter {
       ...(snapshot.completedAt ? { completedAt: snapshot.completedAt } : {}),
       ...(snapshot.model ?? contract.model ? { model: snapshot.model ?? contract.model } : {}),
       artifacts,
-      messages,
+      messages: transcript.messages,
+      capabilities: { transcript: transcript.available, records: records !== undefined },
       ...(records ? { records } : {}),
     });
   }
@@ -166,19 +183,29 @@ export class AlanAdapter implements Adapter {
 
   private async collectMessages(
     executionId: string,
-  ): Promise<{ role: string; content: string; toolCalls: Record<string, number>; failedToolCalls: Record<string, number> }[]> {
+  ): Promise<{
+    available: boolean;
+    messages: { role: string; content: string; toolCalls: Record<string, number>; failedToolCalls: Record<string, number> }[];
+  }> {
+    if (!this.transport.getSessionMessages) {
+      return { available: false, messages: [] };
+    }
+
     const messages = await this.transport
       .getSessionMessages(executionId)
       .catch((error: unknown) => {
         throw this.wrap(error, `get_session_context ${executionId}`);
       });
 
-    return messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-      toolCalls: message.toolCalls ?? {},
-      failedToolCalls: message.failedToolCalls ?? {},
-    }));
+    return {
+      available: true,
+      messages: messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+        toolCalls: message.toolCalls ?? {},
+        failedToolCalls: message.failedToolCalls ?? {},
+      })),
+    };
   }
 
   private async collectRecords(

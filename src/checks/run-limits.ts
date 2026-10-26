@@ -3,6 +3,10 @@ import { result, type CheckRegistry } from "./types";
 
 /** Cost guardrail: a workflow that suddenly burns 3x the tool calls is a regression. */
 export const runLimits: CheckRegistry["run.limits"] = (check, ctx) => {
+  if (!ctx.trace.limits && ctx.trace.capabilities?.transcript === false) {
+    return result(check, "skipped", "run exposes no call counters (transport cannot resolve the session)");
+  }
+
   const limits = deriveLimits(ctx.trace);
   const failures: string[] = [];
 

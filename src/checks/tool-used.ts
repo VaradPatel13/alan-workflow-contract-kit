@@ -7,6 +7,10 @@ import { result, type CheckRegistry } from "./types";
  * with these arguments" is not, and is deliberately out of v0 scope.
  */
 export const toolUsed: CheckRegistry["trace.tool_used"] = (check, ctx) => {
+  if (ctx.trace.capabilities?.transcript === false) {
+    return result(check, "skipped", "run exposes no transcript (transport cannot resolve the session)");
+  }
+
   const count = toolCallCount(ctx.trace, check.tool);
 
   if (count < check.min_calls) {

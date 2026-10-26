@@ -115,7 +115,8 @@ AWC_TRANSPORT_MODULE=./my-transport.js awc run -c contracts --adapter alan
 ```
 
 The module default-exports an `AlanTransport` (see `src/adapters/alan-mcp.ts`). Nothing else in
-the kit changes when the transport lands.
+the kit changes when the transport lands. The transport also resolves an execution to its session;
+if it cannot, transcript-based checks report `skipped` rather than seeing zero tool calls.
 
 ## Baseline and flake
 
@@ -168,7 +169,7 @@ Everything the CLI does is importable, which is how Mode B drives it from inside
 ## Development
 
 ```bash
-npm test          # 56 tests, offline
+npm test          # 60 tests, offline
 npm run typecheck
 npm run build
 ```

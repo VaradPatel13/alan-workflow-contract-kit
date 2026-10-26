@@ -66,6 +66,16 @@ export const traceSchema = z.object({
       failedToolCalls: z.number().int().min(0).default(0),
     })
     .optional(),
+  /**
+   * What the transport could actually read. A check whose evidence is missing
+   * reports skipped instead of inventing a verdict from an empty array.
+   */
+  capabilities: z
+    .object({
+      transcript: z.boolean().default(true),
+      records: z.boolean().default(false),
+    })
+    .optional(),
   model: z.string().optional(),
 });
 
