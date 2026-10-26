@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.awc/last-run.json
+.awc/*.xml
+.awc/*.md
+*.tsbuildinfo
+.DS_Store

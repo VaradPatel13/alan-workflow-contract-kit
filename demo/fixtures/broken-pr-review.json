@@ -1,0 +1,76 @@
+{
+  "runs": [
+    {
+      "executionId": "exec_broken_a",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "artifacts": [
+        {
+          "id": "art_broken_1",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_broken_1",
+          "content": "# PR Review — #1842\n\n## Summary\nRetry changes look fine.\n\n## Findings\n- src/queue/retry.ts:42 — the cap is checked too late.\n\n## Risk\nLow."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Reviewed the diff.",
+          "toolCalls": { "read_file": 2, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 3, "failedToolCalls": 0 }
+    },
+    {
+      "executionId": "exec_broken_b",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "artifacts": [
+        {
+          "id": "art_broken_2",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_broken_2",
+          "content": "# PR Review — #1842\n\n## Summary\nLGTM — nothing to flag, the retry work is straightforward.\n\n## Findings\n- src/queue/retry.ts:42 — cap ordering is wrong.\n\n## Risk\nLow.\n\n## Recommendation\nMerge as is."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Looks good, nothing to flag.",
+          "toolCalls": { "read_file": 1, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 2, "failedToolCalls": 0 }
+    },
+    {
+      "executionId": "exec_broken_c",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "artifacts": [
+        {
+          "id": "art_broken_3",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_broken_3",
+          "content": "# PR Review — #1842\n\n## Summary\nRetry hardening with a few concerns.\n\n## Findings\n- The retry logic is risky and should be reworked.\n- Errors are swallowed somewhere in the uploader.\n\n## Risk\nMedium.\n\n## Recommendation\nHold until the findings are verified."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "I have concerns about the retry logic.",
+          "toolCalls": { "read_file": 1, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 2, "failedToolCalls": 0 }
+    }
+  ]
+}

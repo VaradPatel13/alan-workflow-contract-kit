@@ -1,0 +1,42 @@
+name: task-planner
+description: Planning a task must produce a structured plan and actually file the subtasks it promises.
+workflow: wf_task_planner_02
+model: claude-sonnet-4-5
+instruction: Plan the retry hardening work and create one subtask per step.
+runs: 2
+require_pass_ratio: 1
+
+checks:
+  - id: plan-exists
+    type: artifact.exists
+    artifact: plan
+
+  - id: plan-sections
+    type: artifact.sections
+    artifact: plan
+    require: [Goal, Steps, Risks]
+
+  - id: steps-have-pointers
+    type: section.evidence
+    artifact: plan
+    section: Steps
+    pattern: '[\w./-]+\.\w+:\d+'
+
+  - id: subtasks-filed
+    type: records.subtasks
+    min_count: 3
+    status: todo
+
+  - id: subtasks-were-created
+    type: trace.tool_used
+    tool: create_subtask
+    min_calls: 3
+
+  - id: plan-ran
+    type: run.status
+    in: [completed, succeeded]
+
+  - id: within-budget
+    type: run.limits
+    max_tool_calls: 40
+    max_failed_calls: 0

@@ -1,0 +1,70 @@
+{
+  "runs": [
+    {
+      "executionId": "exec_plan_5510_a",
+      "workflowId": "wf_task_planner_02",
+      "status": "completed",
+      "model": "claude-sonnet-4-5",
+      "completedAt": "2026-10-21T11:02:18.000Z",
+      "artifacts": [
+        {
+          "id": "art_plan_5510",
+          "type": "plan",
+          "title": "Plan — Ship retry hardening",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_plan_5510",
+          "content": "# Plan — Ship retry hardening\n\n## Goal\nMake upload retries bounded and observable.\n\n## Steps\n- Cap the backoff calculator at 30s (src/queue/retry.ts:42)\n- Emit a metric when the retry budget is exhausted (src/queue/metrics.ts:27)\n- Add a test for the capped path (test/queue/retry.test.ts:9)\n\n## Risks\n- A hard cap can slow recovery on genuinely flaky networks."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Drafting the plan and filing subtasks.",
+          "toolCalls": { "create_artifact": 1, "create_subtask": 3, "read_file": 2 },
+          "failedToolCalls": {}
+        }
+      ],
+      "records": {
+        "subtasks": [
+          { "id": "sub_1", "title": "Cap backoff at 30s", "status": "todo" },
+          { "id": "sub_2", "title": "Emit retry-exhausted metric", "status": "todo" },
+          { "id": "sub_3", "title": "Add capped-path test", "status": "todo" }
+        ],
+        "taskComments": []
+      },
+      "limits": { "toolCalls": 6, "failedToolCalls": 0 }
+    },
+    {
+      "executionId": "exec_plan_5510_b",
+      "workflowId": "wf_task_planner_02",
+      "status": "completed",
+      "model": "claude-sonnet-4-5",
+      "completedAt": "2026-10-21T11:14:55.000Z",
+      "artifacts": [
+        {
+          "id": "art_plan_5511",
+          "type": "plan",
+          "title": "Plan — Ship retry hardening",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_plan_5511",
+          "content": "# Plan — Ship retry hardening\n\n## Goal\nBound the retry budget and make exhaustion visible in metrics.\n\n## Steps\n- Move the cap check ahead of the multiplier (src/queue/retry.ts:42)\n- Emit a counter when retries are exhausted (src/queue/metrics.ts:27)\n- Cover the capped path in the queue tests (test/queue/retry.test.ts:9)\n\n## Risks\n- Metrics cardinality stays flat: the counter has one label.\n- Tests need a fake timer to stay fast."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Planning the retry hardening work and filing subtasks.",
+          "toolCalls": { "create_artifact": 1, "create_subtask": 3, "read_file": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "records": {
+        "subtasks": [
+          { "id": "sub_11", "title": "Cap backoff at 30s", "status": "todo" },
+          { "id": "sub_12", "title": "Emit retry-exhausted metric", "status": "todo" },
+          { "id": "sub_13", "title": "Add capped-path test", "status": "todo" }
+        ],
+        "taskComments": []
+      },
+      "limits": { "toolCalls": 5, "failedToolCalls": 0 }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "entries": {
+    "pr-review::wf_pr_review_01::claude-sonnet-4-5::ee8bbfcee072": {
+      "contract": "pr-review",
+      "workflow": "wf_pr_review_01",
+      "model": "claude-sonnet-4-5",
+      "instructionHash": "ee8bbfcee072b7a75bb441606afeb39c4ecb29b7b2a3fba70e42dda484de80a0",
+      "updatedAt": "2026-10-26T17:14:30.594Z",
+      "checks": {
+        "report-exists": "pass",
+        "required-sections": "pass",
+        "findings-cite-evidence": "pass",
+        "no-unqualified-approval": "pass",
+        "tool-budget": "pass",
+        "run-succeeded": "pass"
+      }
+    },
+    "task-planner::wf_task_planner_02::claude-sonnet-4-5::b281dd032465": {
+      "contract": "task-planner",
+      "workflow": "wf_task_planner_02",
+      "model": "claude-sonnet-4-5",
+      "instructionHash": "b281dd03246593f4445d1c3ed9142654b60080849534a8c14088aa272735707e",
+      "updatedAt": "2026-10-26T17:14:30.596Z",
+      "checks": {
+        "plan-exists": "pass",
+        "plan-sections": "pass",
+        "steps-have-pointers": "pass",
+        "subtasks-filed": "pass",
+        "subtasks-were-created": "pass",
+        "plan-ran": "pass",
+        "within-budget": "pass"
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+name: pr-review
+description: A code review must keep its structure, cite evidence, and never end in an unconditional approval.
+workflow: wf_pr_review_01
+model: claude-sonnet-4-5
+instruction: Review pull request #1842 against the retry hardening checklist.
+runs: 3
+require_pass_ratio: 0.67
+
+checks:
+  - id: report-exists
+    type: artifact.exists
+    artifact: test-report
+
+  - id: required-sections
+    type: artifact.sections
+    artifact: test-report
+    require: [Summary, Findings, Risk, Recommendation]
+
+  - id: findings-cite-evidence
+    type: section.evidence
+    artifact: test-report
+    section: Findings
+    min_per_item: 1
+    pattern: '[\w./-]+\.\w+:\d+'
+
+  - id: no-unqualified-approval
+    type: text.forbidden
+    patterns: ['\bLGTM\b', 'nothing to flag']
+    scope: all
+
+  - id: tool-budget
+    type: run.limits
+    max_tool_calls: 60
+    max_failed_calls: 0
+
+  - id: run-succeeded
+    type: run.status
+    in: [succeeded, completed]

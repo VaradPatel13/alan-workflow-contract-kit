@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  contract:
+    # Offline gate: replays recorded runs. The live Alan transport is the P0
+    # gate; when it lands, add a job that runs `--adapter alan` with its secret.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: awc run
+        run: node dist/bin.js run -c contracts --adapter fixture --fixtures fixtures --junit awc-junit.xml --markdown awc-report.md
+      - name: Publish JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: awc-junit
+          path: awc-junit.xml
+      - name: Publish report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: awc-report
+          path: awc-report.md

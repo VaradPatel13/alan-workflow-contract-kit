@@ -1,0 +1,88 @@
+{
+  "runs": [
+    {
+      "executionId": "exec_pr_1842_a",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "startedAt": "2026-10-20T09:12:04.000Z",
+      "completedAt": "2026-10-20T09:14:51.000Z",
+      "artifacts": [
+        {
+          "id": "art_report_101",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_report_101",
+          "content": "# PR Review — #1842\n\n## Summary\nAdds exponential backoff to the upload queue. Touches 4 files, no schema changes.\n\n## Findings\n- src/queue/retry.ts:42 — the backoff multiplier is applied before the cap, so delays can exceed the 30s ceiling.\n- src/queue/uploader.ts:118 — the retry counter resets on re-enqueue, so retries can run unbounded.\n- test/queue/retry.test.ts:9 — no test covers the capped path.\n\n## Risk\nMedium: uploads only, and only when the remote returns 5xx.\n\n## Recommendation\nMerge after capping the multiplier and adding a test for the capped path."
+        }
+      ],
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review PR #1842 against the retry hardening checklist.",
+          "toolCalls": {},
+          "failedToolCalls": {}
+        },
+        {
+          "role": "assistant",
+          "content": "Reading the diff and the retry calculator.",
+          "toolCalls": { "read_file": 6, "grep": 4, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 11, "failedToolCalls": 0 }
+    },
+    {
+      "executionId": "exec_pr_1842_b",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "startedAt": "2026-10-20T09:20:11.000Z",
+      "completedAt": "2026-10-20T09:22:39.000Z",
+      "artifacts": [
+        {
+          "id": "art_report_102",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_report_102",
+          "content": "# PR Review — #1842\n\n## Summary\nRetry hardening for the upload queue: bounded backoff plus a counter reset fix.\n\n## Findings\n- src/queue/retry.ts:42 — cap is checked before the multiplier, so a 5xx storm can stack beyond 30s.\n- src/queue/uploader.ts:118 — counter reset makes the retry budget per-enqueue instead of per-upload.\n\n## Risk\nLow: no API surface change. Worst case is slower retries on flaky networks.\n\n## Recommendation\nShip the cap fix in this PR; the counter reset can follow separately."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Inspecting the queue changes and the existing tests.",
+          "toolCalls": { "read_file": 5, "grep": 3, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 10, "failedToolCalls": 0 }
+    },
+    {
+      "executionId": "exec_pr_1842_c",
+      "workflowId": "wf_pr_review_01",
+      "status": "succeeded",
+      "model": "claude-sonnet-4-5",
+      "startedAt": "2026-10-20T09:31:02.000Z",
+      "completedAt": "2026-10-20T09:33:44.000Z",
+      "artifacts": [
+        {
+          "id": "art_report_103",
+          "type": "test-report",
+          "title": "PR #1842 review",
+          "url": "https://app.tryalan.ai/teams/demo/artifacts/art_report_103",
+          "content": "# PR Review — #1842\n\n## Summary\nFour files changed around upload retries. One correctness issue, one budget issue.\n\n## Findings\n- src/queue/retry.ts:42 — multiplier runs before the ceiling check.\n- src/queue/uploader.ts:118 — retry budget resets on every enqueue.\n- src/queue/metrics.ts:27 — exhausted retries emit no metric, so failures are invisible.\n- test/queue/retry.test.ts:9 — the capped path has no test.\n\n## Risk\nMedium: silent exhaustion is the risk, not data loss.\n\n## Recommendation\nCap first, then emit a metric when the budget is exhausted."
+        }
+      ],
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Reviewing the diff, the retry calculator, and the metrics hook.",
+          "toolCalls": { "read_file": 7, "grep": 5, "create_test_report": 1 },
+          "failedToolCalls": {}
+        }
+      ],
+      "limits": { "toolCalls": 13, "failedToolCalls": 0 }
+    }
+  ]
+}
